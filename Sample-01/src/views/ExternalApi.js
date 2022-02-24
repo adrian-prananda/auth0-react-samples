@@ -18,7 +18,40 @@ export const ExternalApiComponent = () => {
     getAccessTokenSilently,
     loginWithPopup,
     getAccessTokenWithPopup,
+    user,
   } = useAuth0();
+
+  const getUserMetadata = async () => {
+    const domain = getConfig().domain;
+
+    try {
+      const accessToken = await getAccessTokenSilently({
+        audience: `https://${domain}/api/v2/`,
+        scope: "read:current_user",
+      });
+
+      const userDetailsByIdUrl = `https://${domain}/api/v2/users/${user.sub}`;
+
+      const metadataResponse = await fetch(userDetailsByIdUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const responseData = await metadataResponse.json();
+
+      setState({
+        ...state,
+        showResult: true,
+        apiMessage: responseData,
+      });
+    } catch (e) {
+      setState({
+        ...state,
+        error: e.error,
+      });
+    }
+  };
 
   const handleConsent = async () => {
     try {
@@ -178,6 +211,15 @@ export const ExternalApiComponent = () => {
           disabled={!audience}
         >
           Ping API
+        </Button>
+
+        <Button
+          color="primary"
+          className="mt-5"
+          onClick={getUserMetadata}
+          disabled={!audience}
+        >
+          Get User Info
         </Button>
       </div>
 
